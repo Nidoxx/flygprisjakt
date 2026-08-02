@@ -1,5 +1,7 @@
 # Checklista — Resesöksajt (Flygkoll)
 
+**Live (test):** https://nidoxx.github.io/flygprisjakt/ — lösenord `flyg2026` (byt i `index.html` → `SITE_PASSWORD`). Repo: github.com/Nidoxx/flygprisjakt (publikt, noindex).
+
 ## 1. Beslut att ta (tänka på)
 
 - [ ] **Namn/domän:** "Flygkoll" är TAGET (flygkoll.se är en aktiv konkurrentsajt). Lediga kandidater med högfrekventa sökord (kontrollerade 2026-08-02):
