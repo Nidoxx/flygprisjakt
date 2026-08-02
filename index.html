@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="metaTitle">Flygkoll — Vi jämför 1 000+ flygbolag och hittar de billigaste resorna</title>
+<meta id="metaDesc" name="description" content="Flygkoll jämför priser från 1 000+ flygbolag och resebyråer. Vi hittar de billigaste resorna åt dig — gratis att använda.">
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root {
+    --bg: #0b1220; --card: #131c30; --border: #233046;
+    --text: #e8edf6; --muted: #8fa3bf; --accent: #38bdf8; --accent2: #0ea5e9;
+    --green: #4ade80; --amber: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  /* Inloggningslås */
+  #gate { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+  #gate .box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: min(360px, 90vw); text-align: center; }
+  #gate h2 { font-size: 18px; margin-bottom: 6px; }
+  #gate p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  #gate input { width: 100%; padding: 11px 12px; font-size: 15px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); margin-bottom: 10px; }
+  #gate button { width: 100%; padding: 11px; font-size: 15px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; color: #062033; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+  #gate .err { color: #f87171; font-size: 13px; margin-top: 10px; }
+
+  /* Demo-banner */
+  .demo-ribbon { background: var(--amber); color: #1a1505; text-align: center; font-size: 13px; font-weight: 600; padding: 7px 12px; }
+
+  /* Header */
+  header { position: sticky; top: 0; z-index: 50; background: rgba(11,18,32,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+  .nav { max-width: 1100px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-size: 20px; font-weight: 800; letter-spacing: .5px; }
+  .logo span { color: var(--accent); }
+  .nav-right { display: flex; align-items: center; gap: 22px; }
+  .nav a { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .nav a:hover { color: var(--text); }
+  #langToggle {
+    background: transparent; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 5px 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  #langToggle:hover { background: rgba(56,189,248,.12); }
+
+  /* Hero */
+  .hero { max-width: 1100px; margin: 0 auto; padding: 56px 24px 24px; text-align: center; }
+  .hero h1 { font-size: clamp(26px, 4vw, 40px); font-weight: 800; line-height: 1.25; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p { color: var(--muted); margin-top: 12px; max-width: 620px; margin-left: auto; margin-right: auto; }
+
+  /* Sökformulär */
+  .search-wrap { max-width: 900px; margin: 32px auto 0; }
+  .search { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+  .search-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (min-width: 700px) { .search-grid { grid-template-columns: 1.2fr 1.2fr .9fr .9fr .6fr; } }
+  .field { text-align: left; }
+  .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; padding: 11px 12px; font-size: 15px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  }
+  .field input:focus, .field select:focus { outline: 2px solid var(--accent); }
+  .search-btn {
+    grid-column: 1 / -1; margin-top: 4px; padding: 14px; font-size: 16px; font-weight: 700;
+    border: none; border-radius: 12px; cursor: pointer; color: #062033;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    transition: transform .1s, filter .1s;
+  }
+  .search-btn:hover { filter: brightness(1.1); }
+  .search-btn:active { transform: scale(.99); }
+  .search-note { font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+  /* Laddar-läge */
+  #loading { display: none; padding: 30px; text-align: center; color: var(--muted); }
+  .spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 12px; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Resultat */
+  #results { display: none; max-width: 900px; margin: 28px auto 0; }
+  .res-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .res-head h2 { font-size: 19px; }
+  .res-head .route { color: var(--accent); font-weight: 700; }
+  .ex-tag { background: var(--amber); color: #1a1505; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .card .flights { flex: 1; min-width: 200px; }
+  .card .airline { font-weight: 600; font-size: 14px; }
+  .card .meta { font-size: 13px; color: var(--muted); }
+  .card .time { font-size: 18px; font-weight: 700; }
+  .card .dur { font-size: 12px; color: var(--muted); }
+  .card .price-box { text-align: right; }
+  .card .price { font-size: 22px; font-weight: 800; color: var(--green); }
+  .card .per { font-size: 11px; color: var(--muted); }
+  .card .cta { display: inline-block; margin-top: 6px; background: var(--accent); color: #062033; font-weight: 700; font-size: 13px; padding: 7px 14px; border-radius: 8px; text-decoration: none; }
+  .demo-note { background: rgba(56,189,248,.08); border: 1px dashed var(--accent); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--muted); margin-top: 16px; }
+
+  /* Sektioner */
+  section { max-width: 1100px; margin: 0 auto; padding: 64px 24px; }
+  .sec-title { text-align: center; font-size: clamp(22px, 3vw, 30px); font-weight: 800; margin-bottom: 10px; }
+  .sec-sub { text-align: center; color: var(--muted); max-width: 560px; margin: 0 auto 36px; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .step { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .step .num { width: 34px; height: 34px; border-radius: 50%; background: rgba(56,189,248,.15); color: var(--accent); font-weight: 800; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .step h3 { font-size: 16px; margin-bottom: 6px; }
+  .step p { font-size: 14px; color: var(--muted); }
+  .why { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .why-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .why-card h3 { font-size: 15px; margin-bottom: 6px; color: var(--accent); }
+  .why-card p { font-size: 14px; color: var(--muted); }
+
+  /* Footer */
+  footer { border-top: 1px solid var(--border); margin-top: 40px; }
+  .foot { max-width: 1100px; margin: 0 auto; padding: 28px 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--muted); }
+  .foot a { color: var(--muted); text-decoration: none; margin-right: 16px; }
+  .foot a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="box">
+    <h2 data-i18n="gateTitle">Privat demo-sida</h2>
+    <p data-i18n="gateSub">Den här sidan är låst — ange lösenordet för att fortsätta.</p>
+    <input type="password" id="gatePass" placeholder="••••••••" autocomplete="off">
+    <button id="gateBtn" data-i18n="gateBtn">Lås upp</button>
+    <div class="err" id="gateErr" style="display:none" data-i18n="gateWrong">Fel lösenord — försök igen.</div>
+  </div>
+</div>
+
+<div class="demo-ribbon" data-i18n="ribbon">⚙️ Demo-version — sökningen aktiveras när vi kopplat in vår bokningspartner (pågår).</div>
+
+<header>
+  <div class="nav">
+    <div class="logo">Flyg<span>koll</span></div>
+    <div class="nav-right">
+      <nav>
+        <a href="#hur" data-i18n="navHow">Så fungerar det</a>
+        <a href="#varfor" data-i18n="navWhy">Varför oss</a>
+      </nav>
+      <button id="langToggle" title="Change language">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="hero">
+  <h1 data-i18n-html="heroH1">Vi jämför 1 000+ flygbolag<br>och hittar <em>de billigaste resorna</em></h1>
+  <p data-i18n="heroP">Flygkoll söker igenom flygbolag och resebyråer på en gång — så att ni alltid ser det bästa priset. Gratis att använda, ingen registrering.</p>
+
+  <div class="search-wrap">
+    <form class="search" id="searchForm">
+      <div class="search-grid">
+        <div class="field">
+          <label for="from" data-i18n="lFrom">Från</label>
+          <input type="text" id="from" value="Stockholm (ARN)" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="to" data-i18n="lTo">Till</label>
+          <input type="text" id="to" value="Bangkok (BKK)" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="dep" data-i18n="lDep">Utresa</label>
+          <input type="date" id="dep">
+        </div>
+        <div class="field">
+          <label for="ret" data-i18n="lRet">Hemresa</label>
+          <input type="date" id="ret">
+        </div>
+        <div class="field">
+          <label for="pax" data-i18n="lPax">Resenärer</label>
+          <select id="pax">
+            <option value="1">1</option><option value="2" selected>2</option>
+            <option value="3">3</option><option value="4">4</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="search-btn" data-i18n="btnSearch">🔍 Sök billiga flyg</button>
+      <div class="search-note" data-i18n="searchNote">Vi jämför priser från 1 000+ flygbolag och resebyråer — ett sök, alla priser.</div>
+    </form>
+  </div>
+</div>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <span data-i18n="loading">Vi söker bland 1 000+ flygbolag och resebyråer…</span>
+</div>
+
+<div id="results">
+  <div class="res-head">
+    <h2><span data-i18n="resHead">Bästa priserna:</span> <span class="route" id="rRoute">Stockholm → Bangkok</span></h2>
+    <span class="ex-tag" data-i18n="exTag">EXEMPEL · DEMO</span>
+  </div>
+  <div id="resultCards"></div>
+  <div class="demo-note" data-i18n="demoNote"><strong>Det här är exempelresultat i demo-läge.</strong> När vår partneranslutning är klar (WayAway/Kiwi) visas här riktiga priser i realtid, och klick leder vidare till bokning. Siffrorna ovan är ungefärliga marknadspriser för sträckan.</div>
+</div>
+
+<section id="hur">
+  <h2 class="sec-title" data-i18n="howTitle">Så fungerar det</h2>
+  <p class="sec-sub" data-i18n="howSub">Vi gör jobbet åt er — ni jämför, väljer och bokar på två minuter.</p>
+  <div class="steps">
+    <div class="step"><div class="num">1</div><h3 data-i18n="step1t">Ni söker</h3><p data-i18n="step1p">Fyll i sträcka och datum. Ett sök täcker flygbolag och resebyråer på samma gång.</p></div>
+    <div class="step"><div class="num">2</div><h3 data-i18n="step2t">Vi jämför</h3><p data-i18n="step2p">Vår sökmotor sorterar alla priser — billigast först, med tid, mellanlandningar och flygbolag.</p></div>
+    <div class="step"><div class="num">3</div><h3 data-i18n="step3t">Ni bokar</h3><p data-i18n="step3p">Klicka vidare till bokningen hos flygbolaget eller resebyrån. Säkert och utan extra avgifter.</p></div>
+  </div>
+</section>
+
+<section id="varfor">
+  <h2 class="sec-title" data-i18n="whyTitle">Varför flyga med Flygkoll?</h2>
+  <p class="sec-sub" data-i18n="whySub">Vi är oberoende — därför får ni alltid hela prisbilden.</p>
+  <div class="why">
+    <div class="why-card"><h3 data-i18n="why1t">Oberoende jämförelse</h3><p data-i18n="why1p">Vi visar alla alternativ, inte bara dem som betalar oss mest. Vår intäkt påverkas inte av vilket flygbolag ni väljer.</p></div>
+    <div class="why-card"><h3 data-i18n="why2t">Gratis att använda</h3><p data-i18n="why2p">Ingen avgift, ingen registrering, inga dolda påslag. Priset ni ser är priset ni betalar.</p></div>
+    <div class="why-card"><h3 data-i18n="why3t">Allt på en sida</h3><p data-i18n="why3p">Direktflyg, mellanlandningar, bagagepriser och flygbolag — sorterat så att ni fattar rätt beslut snabbt.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot">
+    <div data-i18n="footCopy">© 2026 Flygkoll — Arbetsnamn, demo-version. Domän bestäms inom kort.</div>
+    <div>
+      <a href="#" data-i18n="footAbout">Om oss</a>
+      <a href="#" data-i18n="footPrivacy">Integritetspolicy</a>
+      <a href="#" data-i18n="footTerms">Villkor</a>
+      <a href="#" data-i18n="footContact">Kontakt</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   PARTNER-INTEGRATION (konfigurera när kontot är klart)
+   ────────────────────────────────────────────────────────────────
+   1. Registrera dig hos WayAway (wayaway.io/en/for-partners) eller
+      Kiwi (kiwi.com/partners) — gratis.
+   2. Klistra in deras widget-kod/iframe i variabeln nedan.
+   3. Sätt widgetReady = true. Då ersätts demo-resultaten med den
+      riktiga sökmotorn.
+   ════════════════════════════════════════════════════════════════ */
+const PARTNER = {
+  widgetReady: false,          // ← sätt till true när widgeten är inlagd
+  widgetHtml: null,            // ← klistra in widget-kod här
+  affiliateUrl: null           // ← er affiliate-länk (används som fallback)
+};
+
+/* ── SPRÅK / LANGUAGE (SV + EN) ─────────────────────────────── */
+const I18N = {
+  sv: {
+    ribbon: '⚙️ Demo-version — sökningen aktiveras när vi kopplat in vår bokningspartner (pågår).',
+    navHow: 'Så fungerar det', navWhy: 'Varför oss',
+    heroH1: 'Vi jämför 1 000+ flygbolag<br>och hittar <em>de billigaste resorna</em>',
+    heroP: 'Flygkoll söker igenom flygbolag och resebyråer på en gång — så att ni alltid ser det bästa priset. Gratis att använda, ingen registrering.',
+    lFrom: 'Från', lTo: 'Till', lDep: 'Utresa', lRet: 'Hemresa', lPax: 'Resenärer',
+    btnSearch: '🔍 Sök billiga flyg',
+    searchNote: 'Vi jämför priser från 1 000+ flygbolag och resebyråer — ett sök, alla priser.',
+    loading: 'Vi söker bland 1 000+ flygbolag och resebyråer…',
+    resHead: 'Bästa priserna:', exTag: 'EXEMPEL · DEMO',
+    demoNote: '<strong>Det här är exempelresultat i demo-läge.</strong> När vår partneranslutning är klar (WayAway/Kiwi) visas här riktiga priser i realtid, och klick leder vidare till bokning. Siffrorna ovan är ungefärliga marknadspriser för sträckan.',
+    howTitle: 'Så fungerar det',
+    howSub: 'Vi gör jobbet åt er — ni jämför, väljer och bokar på två minuter.',
+    step1t: 'Ni söker', step1p: 'Fyll i sträcka och datum. Ett sök täcker flygbolag och resebyråer på samma gång.',
+    step2t: 'Vi jämför', step2p: 'Vår sökmotor sorterar alla priser — billigast först, med tid, mellanlandningar och flygbolag.',
+    step3t: 'Ni bokar', step3p: 'Klicka vidare till bokningen hos flygbolaget eller resebyrån. Säkert och utan extra avgifter.',
+    whyTitle: 'Varför flyga med Flygkoll?',
+    whySub: 'Vi är oberoende — därför får ni alltid hela prisbilden.',
+    why1t: 'Oberoende jämförelse', why1p: 'Vi visar alla alternativ, inte bara dem som betalar oss mest. Vår intäkt påverkas inte av vilket flygbolag ni väljer.',
+    why2t: 'Gratis att använda', why2p: 'Ingen avgift, ingen registrering, inga dolda påslag. Priset ni ser är priset ni betalar.',
+    why3t: 'Allt på en sida', why3p: 'Direktflyg, mellanlandningar, bagagepriser och flygbolag — sorterat så att ni fattar rätt beslut snabbt.',
+    footCopy: '© 2026 Flygkoll — Arbetsnamn, demo-version. Domän bestäms inom kort.',
+    footAbout: 'Om oss', footPrivacy: 'Integritetspolicy', footTerms: 'Villkor', footContact: 'Kontakt',
+    dNonstop: 'Direktflyg — exempel', dStop: '1 mellanlandning — exempel',
+    dTagDirect: 'Direkt', dTagCheapest: 'Billigast', dPer: 'tur & retur / person', dSeePrice: 'Se pris →',
+    title: 'Flygkoll — Vi jämför 1 000+ flygbolag och hittar de billigaste resorna',
+    metaDesc: 'Flygkoll jämför priser från 1 000+ flygbolag och resebyråer. Vi hittar de billigaste resorna åt dig — gratis att använda.',
+    gateTitle: 'Privat demo-sida', gateSub: 'Den här sidan är låst — ange lösenordet för att fortsätta.',
+    gateBtn: 'Lås upp', gateWrong: 'Fel lösenord — försök igen.'
+  },
+  en: {
+    ribbon: '⚙️ Demo version — search goes live once our booking partner is connected (in progress).',
+    navHow: 'How it works', navWhy: 'Why us',
+    heroH1: 'We compare 1,000+ airlines<br>and find <em>the cheapest flights</em>',
+    heroP: 'Flygkoll searches airlines and travel agencies at once — so you always see the best price. Free to use, no registration needed.',
+    lFrom: 'From', lTo: 'To', lDep: 'Departure', lRet: 'Return', lPax: 'Travelers',
+    btnSearch: '🔍 Search cheap flights',
+    searchNote: 'We compare prices from 1,000+ airlines and travel agencies — one search, every price.',
+    loading: 'Searching 1,000+ airlines and travel agencies…',
+    resHead: 'Best prices:', exTag: 'EXAMPLE · DEMO',
+    demoNote: '<strong>These are example results in demo mode.</strong> Once our partner connection is live (WayAway/Kiwi), real-time prices will appear here and clicks lead to booking. Figures above are approximate market prices for the route.',
+    howTitle: 'How it works',
+    howSub: 'We do the work for you — compare, choose and book in two minutes.',
+    step1t: 'You search', step1p: 'Enter route and dates. One search covers airlines and travel agencies at the same time.',
+    step2t: 'We compare', step2p: 'Our search engine sorts every price — cheapest first, with times, stopovers and airlines.',
+    step3t: 'You book', step3p: 'Click through to book with the airline or agency. Safe and without hidden fees.',
+    whyTitle: 'Why fly with Flygkoll?',
+    whySub: 'We are independent — that is why you always get the full picture.',
+    why1t: 'Independent comparison', why1p: 'We show all options, not just the ones that pay us the most. Our earnings never affect which airline you choose.',
+    why2t: 'Free to use', why2p: 'No fees, no registration, no hidden markups. The price you see is the price you pay.',
+    why3t: 'Everything in one place', why3p: 'Nonstop flights, stopovers, baggage prices and airlines — sorted so you make the right decision fast.',
+    footCopy: '© 2026 Flygkoll — Working title, demo version. Domain TBD.',
+    footAbout: 'About us', footPrivacy: 'Privacy policy', footTerms: 'Terms', footContact: 'Contact',
+    dNonstop: 'Nonstop — example', dStop: '1 stopover — example',
+    dTagDirect: 'Direct', dTagCheapest: 'Cheapest', dPer: 'round trip / person', dSeePrice: 'See price →',
+    title: 'Flygkoll — We compare 1,000+ airlines and find the cheapest flights',
+    metaDesc: 'Flygkoll compares prices from 1,000+ airlines and travel agencies. We find the cheapest flights for you — free to use.',
+    gateTitle: 'Private demo site', gateSub: 'This page is locked — enter the password to continue.',
+    gateBtn: 'Unlock', gateWrong: 'Wrong password — try again.'
+  }
+};
+
+const LANG_KEY = 'flygkoll_lang';
+let lang = 'sv';
+try { lang = localStorage.getItem(LANG_KEY) || 'sv'; } catch (e) { /* localStorage otillgängligt */ }
+if (!I18N[lang]) lang = 'sv';
+
+function applyLang() {
+  const t = I18N[lang];
+  document.documentElement.lang = lang;
+  document.getElementById('metaTitle').textContent = t.title;
+  document.getElementById('metaDesc').content = t.metaDesc;
+  document.getElementById('langToggle').textContent = lang === 'sv' ? 'EN' : 'SV';
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t[el.getAttribute('data-i18n')]; });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t[el.getAttribute('data-i18n-html')]; });
+  /* Uppdatera synliga demo-resultat om de visas */
+  const results = document.getElementById('results');
+  if (results.style.display === 'block' && !PARTNER.widgetReady) {
+    const from = document.getElementById('from').value || 'Stockholm';
+    const to = document.getElementById('to').value || 'Bangkok';
+    document.getElementById('rRoute').textContent = from + ' → ' + to;
+    renderDemo();
+  }
+}
+
+document.getElementById('langToggle').addEventListener('click', () => {
+  lang = lang === 'sv' ? 'en' : 'sv';
+  try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+  applyLang();
+});
+
+/* Datum default: utresa om 30 dagar, hemresa om 37 */
+(function setDefaultDates() {
+  const d = new Date(Date.now() + 30 * 864e5);
+  const r = new Date(Date.now() + 37 * 864e5);
+  const iso = dt => dt.toISOString().slice(0, 10);
+  document.getElementById('dep').value = iso(d);
+  document.getElementById('ret').value = iso(r);
+})();
+
+/* Demo-resultat per språk (ungefärliga marknadspriser, tur och retur per person) */
+function demoData() {
+  const t = I18N[lang];
+  return [
+    { airline: t.dNonstop, time: '10:45 → 05:30 +1', dur: '11 h 45 m', price: 4190, tag: t.dTagDirect },
+    { airline: t.dStop, time: '07:15 → 16:40 +1', dur: '16 h 25 m', price: 3390, tag: t.dTagCheapest },
+    { airline: t.dStop, time: '13:20 → 23:05 +1', dur: '15 h 45 m', price: 3650, tag: '' }
+  ];
+}
+
+document.getElementById('searchForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const from = document.getElementById('from').value.trim() || 'Stockholm';
+  const to = document.getElementById('to').value.trim() || 'Bangkok';
+  document.getElementById('rRoute').textContent = from + ' → ' + to;
+
+  const loading = document.getElementById('loading');
+  const results = document.getElementById('results');
+  loading.style.display = 'block';
+  results.style.display = 'none';
+
+  setTimeout(() => {
+    loading.style.display = 'none';
+    if (PARTNER.widgetReady && PARTNER.widgetHtml) {
+      /* Riktig widget — ersätter demo-innehållet */
+      results.querySelector('#resultCards').innerHTML = '';
+      results.querySelector('.ex-tag').style.display = 'none';
+      const box = document.getElementById('resultCards');
+      box.innerHTML = PARTNER.widgetHtml;
+    } else {
+      renderDemo();
+    }
+    results.style.display = 'block';
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 1400);
+});
+
+function renderDemo() {
+  const cards = document.getElementById('resultCards');
+  cards.innerHTML = '';
+  const t = I18N[lang];
+  demoData().forEach(d => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.innerHTML =
+      '<div class="flights">' +
+        '<div class="airline">' + d.airline + '</div>' +
+        '<div class="time">' + d.time + ' <span class="dur">· ' + d.dur + '</span></div>' +
+        '<div class="meta">' + d.tag + '</div>' +
+      '</div>' +
+      '<div class="price-box">' +
+        '<div class="price">' + d.price.toLocaleString('sv-SE') + ' kr</div>' +
+        '<div class="per">' + t.dPer + '</div>' +
+        '<a class="cta" href="#" onclick="return false;">' + t.dSeePrice + '</a>' +
+      '</div>';
+    cards.appendChild(c);
+  });
+}
+
+/* ── Inloggningslås (håller demo-sidan privat) ────────────────
+   OBS: enkelt kundlås för att ingen ska se test-sidan.
+   För riktig säkerhet senare: Cloudflare Access eller server-auth.
+   Byt lösenord genom att ändra SITE_PASSWORD nedan. */
+const SITE_PASSWORD = 'flyg2026';
+const GATE_KEY = 'flygprisjakt_gate';
+
+function unlockGate() {
+  try { sessionStorage.setItem(GATE_KEY, '1'); } catch (e) {}
+  document.getElementById('gate').style.display = 'none';
+}
+
+document.getElementById('gateBtn').addEventListener('click', function () {
+  if (document.getElementById('gatePass').value === SITE_PASSWORD) {
+    unlockGate();
+  } else {
+    document.getElementById('gateErr').style.display = 'block';
+    document.getElementById('gatePass').value = '';
+    document.getElementById('gatePass').focus();
+  }
+});
+document.getElementById('gatePass').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') document.getElementById('gateBtn').click();
+});
+try { if (sessionStorage.getItem(GATE_KEY) === '1') unlockGate(); } catch (e) {}
+
+applyLang();
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPM-kalkylator — Resesöksajt</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --accent: #8b5cf6;
+    --green: #4ade80; --red: #f87171; --yellow: #facc15;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 24px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 16px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; margin-bottom: 4px; }
+  .field .tip { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .field input[type=number] {
+    width: 100%; padding: 10px 12px; font-size: 16px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  }
+  input:focus { outline: 2px solid var(--accent); }
+  .out { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .out .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
+  .out .row .val { font-weight: 600; }
+  .big { font-size: 26px; font-weight: 700; padding: 6px 0; }
+  .big.pos { color: var(--green); } .big.neg { color: var(--red); }
+  .rpm { font-size: 20px; font-weight: 700; color: var(--yellow); }
+  .notes { max-width: 1000px; margin-top: 20px; }
+  .notes ol { padding-left: 20px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+  .notes li { margin-bottom: 6px; }
+  .notes b { color: var(--text); }
+</style>
+</head>
+<body>
+
+<h1>✈️ RPM-kalkylator — Resesöksajt</h1>
+<div class="sub">Fyll i dina siffror till vänster → resultatet räknas ut direkt till höger. Alla fält är redan ifyllda med realistiska nybörjarsiffror.</div>
+
+<div class="grid">
+
+  <!-- INPUT -->
+  <div class="card">
+    <h2>Dina siffror</h2>
+
+    <div class="field">
+      <label>1. Besökare per månad</label>
+      <input type="number" id="visitors" value="10000" min="0">
+      <div class="tip">Hur många som besöker din sajt varje månad. Börja med 10 000 som mål. Verklig siffra hittar du i Google Analytics (GA4) senare.</div>
+    </div>
+
+    <div class="field">
+      <label>2. % som klickar vidare (flyg)</label>
+      <input type="number" id="ctr" value="5" min="0" max="100" step="0.5">
+      <div class="tip">Hur många av besökarna som klickar på "Sök flyg"-knappen och lämnar din sajt. 3–8 % är normalt.</div>
+    </div>
+
+    <div class="field">
+      <label>3. Ersättning per flygklick (SEK)</label>
+      <input type="number" id="cpc" value="3.5" min="0" step="0.1">
+      <div class="tip">Vad du får varje gång någon klickar vidare. ~$0,2–0,6 ≈ 2–6 kr. Exakt siffra får du från WayAway/Kiwi när du registrerat dig.</div>
+    </div>
+
+    <div class="field">
+      <label>4. Hotellbokningar per 1 000 besökare</label>
+      <input type="number" id="hotelRate" value="3" min="0" step="0.5">
+      <div class="tip">Hur många av 1 000 besökare som bokar hotell via din sajt. 1–5 är normalt. Hotell betalar mycket bättre än flyg!</div>
+    </div>
+
+    <div class="field">
+      <label>5. Provision per hotellbokning (SEK)</label>
+      <input type="number" id="hotelRev" value="400" min="0" step="10">
+      <div class="tip">Booking.com betalar ca 25–40 % av bokningsvärdet. En vistelse på ~1 200 kr ger ~300–500 kr. Exakt siffra från Booking.com affiliate när du blivit godkänd.</div>
+    </div>
+
+    <div class="field">
+      <label>6. Övriga intäkter per månad (SEK)</label>
+      <input type="number" id="other" value="0" min="0" step="50">
+      <div class="tip">eSIM, reseskydd, biluthyrning etc. Börja på 0, lägg till när du har fler partners.</div>
+    </div>
+
+    <div class="field">
+      <label>7. Kostnader per månad (SEK)</label>
+      <input type="number" id="cost" value="150" min="0" step="10">
+      <div class="tip">Domän (~10 kr/mån) + hosting. Gratis hosting med Cloudflare Pages = nästan 0 kr.</div>
+    </div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div>
+    <div class="card" style="margin-bottom:20px">
+      <h2>Resultat per månad</h2>
+      <div class="out">
+        <div class="row"><span>Flygintäkt (klick)</span><span class="val" id="oFlight">–</span></div>
+        <div class="row"><span>Hotellintäkt (bokningar)</span><span class="val" id="oHotel">–</span></div>
+        <div class="row"><span>Övriga intäkter</span><span class="val" id="oOther">–</span></div>
+        <div class="row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:8px"><span>Total intäkt</span><span class="val" id="oRevenue">–</span></div>
+        <div class="row"><span>Kostnader</span><span class="val" id="oCost">–</span></div>
+      </div>
+      <div class="out">
+        <div style="font-size:13px;color:var(--muted)">Vinst per månad</div>
+        <div class="big" id="oProfit">–</div>
+      </div>
+      <div class="out">
+        <div style="font-size:13px;color:var(--muted)">Intäkt per 1 000 besökare (RPM)</div>
+        <div class="rpm" id="oRpm">–</div>
+      </div>
+      <div class="out" style="font-size:13px">
+        <div class="row"><span>Flygklick per månad</span><span class="val" id="oClicks">–</span></div>
+        <div class="row"><span>Hotellbokningar per månad</span><span class="val" id="oBookings">–</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Målkalkyl — hur mycket trafik behövs?</h2>
+      <div class="field">
+        <label>Jag vill tjäna (SEK/mån)</label>
+        <input type="number" id="goal" value="5000" min="0" step="500">
+      </div>
+      <div class="out">
+        <div style="font-size:13px;color:var(--muted)">Då behöver du ungefär</div>
+        <div class="big" id="oGoal">–</div>
+        <div style="font-size:12px;color:var(--muted)" id="oGoalTime">–</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card notes">
+  <h2>Var kommer siffrorna ifrån? (nybörjarguide)</h2>
+  <ol>
+    <li><b>Besökare & klickfrekvens (1–2):</b> från <b>Google Analytics 4 (GA4)</b> — gratis, kopplar du till sajten dag 1. "Besökare" = användare per månad.</li>
+    <li><b>Ersättning per klick (3):</b> från din <b>affiliate-dashboard</b> (WayAway/Kiwi/Travelpayouts) när du registrerat dig. Logga in och titta på "rates" / "commission".</li>
+    <li><b>Hotellsiffror (4–5):</b> från <b>Booking.com affiliate</b> (partner.booking.com). Ansökan är gratis, godkänns inom några dagar.</li>
+    <li><b>Verkligheten:</b> första månaderna blir siffrorna små. Kalkylatorn visar potentialen, inte dag 1. Titta på <b>trenden</b> (uppåt?) — inte på enskilda månader.</li>
+    <li><b>Tumregel:</b> under 2 000 besökare/mån är intäkterna små — då bygger du innehåll, inte intäkter.</li>
+  </ol>
+</div>
+
+<script>
+function fmt(n) { return n.toLocaleString('sv-SE', { maximumFractionDigits: 0 }) + ' kr'; }
+
+function calc() {
+  const visitors = parseFloat(document.getElementById('visitors').value) || 0;
+  const ctr = (parseFloat(document.getElementById('ctr').value) || 0) / 100;
+  const cpc = parseFloat(document.getElementById('cpc').value) || 0;
+  const hotelRate = parseFloat(document.getElementById('hotelRate').value) || 0;
+  const hotelRev = parseFloat(document.getElementById('hotelRev').value) || 0;
+  const other = parseFloat(document.getElementById('other').value) || 0;
+  const cost = parseFloat(document.getElementById('cost').value) || 0;
+
+  const clicks = visitors * ctr;
+  const bookings = visitors * (hotelRate / 1000);
+  const flight = clicks * cpc;
+  const hotel = bookings * hotelRev;
+  const revenue = flight + hotel + other;
+  const profit = revenue - cost;
+  const rpm = visitors > 0 ? (revenue / visitors) * 1000 : 0;
+
+  document.getElementById('oFlight').textContent = fmt(flight);
+  document.getElementById('oHotel').textContent = fmt(hotel);
+  document.getElementById('oOther').textContent = fmt(other);
+  document.getElementById('oRevenue').textContent = fmt(revenue);
+  document.getElementById('oCost').textContent = fmt(cost);
+  const p = document.getElementById('oProfit');
+  p.textContent = (profit >= 0 ? '' : '−') + fmt(Math.abs(profit));
+  p.className = 'big ' + (profit >= 0 ? 'pos' : 'neg');
+  document.getElementById('oRpm').textContent = rpm.toLocaleString('sv-SE', { maximumFractionDigits: 1 }) + ' kr / 1 000 besökare';
+  document.getElementById('oClicks').textContent = Math.round(clicks).toLocaleString('sv-SE');
+  document.getElementById('oBookings').textContent = bookings.toLocaleString('sv-SE', { maximumFractionDigits: 1 });
+
+  // Goal calculation: how many visitors for target profit?
+  const goal = parseFloat(document.getElementById('goal').value) || 0;
+  const perVisitor = (ctr * cpc) + (hotelRate / 1000) * hotelRev;
+  const needed = perVisitor > 0 ? Math.ceil((goal + cost) / perVisitor) : 0;
+  document.getElementById('oGoal').textContent = needed > 0 ? needed.toLocaleString('sv-SE') + ' besökare/mån' : '–';
+  const t = document.getElementById('oGoalTime');
+  if (needed > 0) {
+    if (needed <= 5000) t.textContent = 'Nåbart med SEO inom 3–6 månader.';
+    else if (needed <= 30000) t.textContent = 'Kräver konsekvent publicering i 6–12 månader.';
+    else t.textContent = 'Heltidssatsning, 12–24 månader. Överväg att bredda (fler partners) i stället.';
+  } else { t.textContent = ''; }
+}
+
+document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+calc();
+</script>
+</body>
+</html>
